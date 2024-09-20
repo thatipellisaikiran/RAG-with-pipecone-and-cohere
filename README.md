@@ -101,7 +101,8 @@ The user can input queries through the Streamlit app, and the system will retrie
 Local Deployment:
 -------------------------------
 To run the Streamlit app locally:
--python -m streamlit run app.py
+
+python -m streamlit run app.py
 
 Production Deployment:
 Containerization (Optional): You can containerize the app using Docker for easy deployment.
