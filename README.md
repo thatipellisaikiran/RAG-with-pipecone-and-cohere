@@ -3,12 +3,18 @@
 Table of Contents
 ==================
 1)Introduction
+
 2)Prerequisites
+
 3)Environment Setup
+
 4)Project Structure and Functionality
     -RAG Task-1: Chatbot Setup
+    
     -Task-2: Interactive QA Bot Setup
+    
 5)Deployment
+
 6)Conclusion
 
 **1. Introduction**
