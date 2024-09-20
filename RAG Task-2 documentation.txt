@@ -1,0 +1,183 @@
+Task-2:Interactive QA Bot Interface
+======================================
+Table of Contents
+===================
+1)Introduction
+2Prerequisites
+3)Environment Setup
+4)Code Structure and Functionality
+4.1. Importing Libraries
+4.2. Setting Up API Keys
+4.3. Streamlit Initialization
+4.4. PDF Upload and Processing
+4.5. Text Chunking
+4.6. Pinecone Index Setup
+4.7. Embedding Creation
+4.8. Language Model Initialization
+4.9. User Query Input
+4.10. Answer Retrieval
+4.11. Error Handling
+5)Deployment Instructions
+6)Conclusion
+
+
+1. Introduction
+=======================
+The PDF Querying App allows users to upload PDF documents and interactively query their content using advanced natural language processing techniques. It leverages LangChain for document processing, Cohere for embedding generation, and Pinecone for efficient vector storage and retrieval.
+
+2. Prerequisites
+=======================
+Python: Ensure Python 3.x is installed on your system.
+Required Libraries: Install the following Python libraries:
+pip install streamlit pymupdf langchain pinecone-client cohere
+
+
+3. Environment Setup
+=========================
+API Keys: Obtain API keys from Cohere and Pinecone.
+Environment Variables: Store your API keys in environment variables for security:
+
+export COHERE_API_KEY="your_cohere_api_key"
+export PINECONE_API_KEY="your_pinecone_api_key"
+
+
+4. Code Structure and Functionality
+======================================
+4.1. Importing Libraries
+Begin your script by importing the necessary libraries:
+
+
+import os
+import time
+import streamlit as st
+from io import BytesIO
+import fitz  # PyMuPDF for PDF processing
+from langchain.text_splitter import CharacterTextSplitter
+from pinecone import Pinecone, ServerlessSpec
+from langchain_pinecone import PineconeVectorStore
+from langchain.chains import RetrievalQA
+from langchain_cohere import ChatCohere, CohereEmbeddings
+
+
+4.2. Setting Up API Keys
+Set the API keys as environment variables:
+
+os.environ["COHERE_API_KEY"] = "your_cohere_api_key"
+os.environ['PINECONE_API_KEY'] = 'your_pinecone_api_key'
+
+
+4.3. Streamlit Initialization
+Initialize the Streamlit app and set the title:
+
+st.title("PDF Querying App using LangChain and Cohere")
+
+
+4.4. PDF Upload and Processing
+Create a file uploader to allow users to upload PDF documents:
+
+uploaded_file = st.file_uploader("Choose a PDF file", type="pdf")
+if uploaded_file is not None:
+    try:
+        pdf_data = uploaded_file.read()
+        pdf_reader = fitz.open(stream=BytesIO(pdf_data), filetype="pdf")
+
+Extract text from each page of the PDF:
+
+
+        documents = []
+        for page_num in range(pdf_reader.page_count):
+            page = pdf_reader.load_page(page_num)
+            text = page.get_text("text")
+            documents.append(text)
+        pdf_reader.close()
+
+
+4.5. Text Chunking
+Utilize CharacterTextSplitter to split the extracted text into manageable chunks:
+
+
+        text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+        docs = text_splitter.split_text("\n".join(documents))
+
+
+4.6. Pinecone Index Setup
+Initialize Pinecone and create an index if it does not already exist:
+
+
+        pinecone_api_key = os.environ.get('PINECONE_API_KEY')
+        index_name = "docs-rag-chatbot"
+        pc = Pinecone(api_key=pinecone_api_key)
+        if index_name not in [index_info["name"] for index_info in pc.list_indexes()]:
+            pc.create_index(
+                name=index_name,
+                dimension=384,  # Adjust based on embedding dimensionality
+                metric="cosine",
+                spec=ServerlessSpec(cloud="aws", region="us-east-1"),
+            )
+            while not pc.describe_index(index_name).status["ready"]:
+                time.sleep(1)
+
+
+4.7. Embedding Creation
+Generate embeddings for the document chunks using Cohere:
+
+
+        embeddings = CohereEmbeddings(model="embed-english-light-v3.0")
+        vectorstore_from_docs = PineconeVectorStore.from_texts(
+            docs,
+            index_name=index_name,
+            embedding=embeddings
+        )
+
+
+4.8. Language Model Initialization
+Set up the Cohere language model and the retrieval system:
+
+
+        llm = ChatCohere()
+        qa = RetrievalQA.from_chain_type(
+            llm=llm,
+            chain_type="stuff",
+            retriever=vectorstore_from_docs.as_retriever()
+        )
+
+
+4.9. User Query Input
+Capture user input for queries:
+
+
+        query = st.text_input("Enter your query:")
+
+
+4.10. Answer Retrieval
+When a query is provided, retrieve the corresponding answer:
+
+
+        if query:
+            result = qa.run(query)
+            st.write(f"**Answer**: {result}")
+
+
+4.11. Error Handling
+Implement error handling to manage potential issues:
+
+
+    except ValueError as e:
+        st.error(f"Error: {e}")
+    except Exception as e:
+        st.error(f"An unexpected error occurred: {e}")
+
+
+5. Deployment Instructions
+================================
+Run the Streamlit app locally using:
+
+python -m streamlit run app.py
+For production deployment, consider using platforms like Streamlit Sharing, Heroku, or AWS.
+
+
+6. Conclusion
+==================
+The PDF Querying App effectively enables users to interact with PDF documents through natural language queries. 
+This documentation outlines the steps to set up, develop, and deploy the application, ensuring a comprehensive understanding of its functionality and implementation.
+
