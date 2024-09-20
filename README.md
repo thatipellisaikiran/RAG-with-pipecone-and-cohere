@@ -9,6 +9,7 @@ Table of Contents
 3)Environment Setup
 
 4)Project Structure and Functionality
+
     -RAG Task-1: Chatbot Setup
     
     -Task-2: Interactive QA Bot Setup
