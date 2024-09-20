@@ -110,9 +110,10 @@ Streamlit Cloud
 Heroku
 AWS
 
-**Example Usage:
-For querying:**
-=======================
+**Example Usage:**
+===================
+For querying:
+-------------
 python main.py
 Enter Query: What was the revenue in Q2 2023?
 
